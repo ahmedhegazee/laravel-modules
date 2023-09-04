@@ -37,6 +37,7 @@ class RouteProviderMakeCommand extends GeneratorCommand
     {
         return [
             ['module', InputArgument::OPTIONAL, 'The name of module will be used.'],
+            ['sub-module', InputArgument::OPTIONAL, 'The name of module will be used.'],
         ];
     }
 
@@ -55,15 +56,16 @@ class RouteProviderMakeCommand extends GeneratorCommand
     protected function getTemplateContents()
     {
         $module = $this->laravel['modules']->findOrFail($this->getModuleName());
-
+        $submodule = $this->argument('sub-module');
+        $subModuleNameSpace = $submodule ?  str_replace('/', '\\', $submodule) : '';
         return (new Stub('/route-provider.stub', [
-            'NAMESPACE'            => $this->getClassNamespace($module),
+            'NAMESPACE'            => $this->getClassNamespace($module) . ($submodule ? '\\' . $subModuleNameSpace : ''),
             'CLASS'                => $this->getFileName(),
             'MODULE_NAMESPACE'     => $this->laravel['modules']->config('namespace'),
             'MODULE'               => $this->getModuleName(),
-            'CONTROLLER_NAMESPACE' => $this->getControllerNameSpace(),
-            'WEB_ROUTES_PATH'      => $this->getWebRoutesPath(),
-            'API_ROUTES_PATH'      => $this->getApiRoutesPath(),
+            'CONTROLLER_NAMESPACE' => \str_replace('Http\Controllers', $subModuleNameSpace . '\\Http\Controllers', $this->getControllerNameSpace()),
+            'WEB_ROUTES_PATH'      => '/' . $submodule . $this->getWebRoutesPath(),
+            'API_ROUTES_PATH'      => '/' . $submodule . $this->getApiRoutesPath(),
             'LOWER_NAME'           => $module->getLowerName(),
         ]))->render();
     }

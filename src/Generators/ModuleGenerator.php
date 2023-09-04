@@ -358,16 +358,29 @@ class ModuleGenerator extends Generator
             if ($folder->generate() === false) {
                 continue;
             }
+            if ($folder->customPath() === true) {
+                //create Admin , Front Api
+                $this->generateSubModule($folder);
+            } else {
+                $path = $this->module->getModulePath($this->getName()) . '/' . $folder->getPath();
 
-            $path = $this->module->getModulePath($this->getName()) . '/' . $folder->getPath();
-
+                $this->filesystem->makeDirectory($path, 0755, true);
+                if (config('modules.stubs.gitkeep')) {
+                    $this->generateGitKeep($path);
+                }
+            }
+        }
+    }
+    public function generateSubModule($folder)
+    {
+        foreach (['Api/V1', 'Admin', 'Front'] as  $subModule) {
+            $path = $this->module->getModulePath($this->getName()) . '/' . $subModule . '/' . $folder->getPath();
             $this->filesystem->makeDirectory($path, 0755, true);
             if (config('modules.stubs.gitkeep')) {
                 $this->generateGitKeep($path);
             }
         }
     }
-
     /**
      * Generate git keep to the specified path.
      *
@@ -384,9 +397,27 @@ class ModuleGenerator extends Generator
     public function generateFiles()
     {
         foreach ($this->getFiles() as $stub => $file) {
-            $path = $this->module->getModulePath($this->getName()) . $file;
+            if (\str_contains($stub, 'routes')) {
+                $this->generateSubModulesFiles($stub, $file);
+            } else {
+                $path = $this->module->getModulePath($this->getName()) . $file;
 
-            $this->component->task("Generating file {$path}",function () use ($stub, $path) {
+                $this->component->task("Generating file {$path}", function () use ($stub, $path) {
+                    if (!$this->filesystem->isDirectory($dir = dirname($path))) {
+                        $this->filesystem->makeDirectory($dir, 0775, true);
+                    }
+
+                    $this->filesystem->put($path, $this->getStubContents($stub));
+                });
+            }
+        }
+    }
+    public function generateSubModulesFiles($stub, $file)
+    {
+        foreach (['Api/V1', 'Admin', 'Front'] as  $subModule) {
+            $path = $this->module->getModulePath($this->getName()) . $subModule . '/' . $file;
+
+            $this->component->task("Generating file {$path}", function () use ($stub, $path) {
                 if (!$this->filesystem->isDirectory($dir = dirname($path))) {
                     $this->filesystem->makeDirectory($dir, 0775, true);
                 }
@@ -395,7 +426,6 @@ class ModuleGenerator extends Generator
             });
         }
     }
-
     /**
      * Generate some resources.
      */
@@ -421,11 +451,11 @@ class ModuleGenerator extends Generator
         }
 
         if (GenerateConfigReader::read('controller')->generate() === true) {
-            $options = $this->type=='api' ? ['--api'=>true] : [];
+            $options = $this->type == 'api' ? ['--api' => true] : [];
             $this->console->call('module:make-controller', [
                 'controller' => $this->getName() . 'Controller',
                 'module' => $this->getName(),
-            ]+$options);
+            ] + $options);
         }
     }
 
@@ -495,7 +525,7 @@ class ModuleGenerator extends Generator
     {
         $path = $this->module->getModulePath($this->getName()) . 'module.json';
 
-        $this->component->task("Generating file $path",function () use ($path) {
+        $this->component->task("Generating file $path", function () use ($path) {
             if (!$this->filesystem->isDirectory($dir = dirname($path))) {
                 $this->filesystem->makeDirectory($dir, 0775, true);
             }
