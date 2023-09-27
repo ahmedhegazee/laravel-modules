@@ -44,8 +44,9 @@ class ControllerMakeCommand extends GeneratorCommand
         $path = $this->laravel['modules']->getModulePath($this->getModuleName());
 
         $controllerPath = GenerateConfigReader::read('controller');
+        $submodule = $this->argument('sub-module');
 
-        return $path . $controllerPath->getPath() . '/' . $this->getControllerName() . '.php';
+        return $path . $submodule . '/' . $controllerPath->getPath() . '/' . $this->getControllerName() . '.php';
     }
 
     /**
@@ -55,11 +56,13 @@ class ControllerMakeCommand extends GeneratorCommand
     {
         $module = $this->laravel['modules']->findOrFail($this->getModuleName());
 
+        $submodule = $this->argument('sub-module');
+        $subModuleNameSpace = $submodule ?  str_replace('/', '\\', $submodule) : '';
         return (new Stub($this->getStubName(), [
             'MODULENAME'        => $module->getStudlyName(),
             'CONTROLLERNAME'    => $this->getControllerName(),
             'NAMESPACE'         => $module->getStudlyName(),
-            'CLASS_NAMESPACE'   => $this->getClassNamespace($module),
+            'CLASS_NAMESPACE'   => \str_replace('Http\Controllers', $subModuleNameSpace . '\\Http\Controllers', $this->getClassNamespace($module)),
             'CLASS'             => $this->getControllerNameWithoutNamespace(),
             'LOWER_NAME'        => $module->getLowerName(),
             'MODULE'            => $this->getModuleName(),
@@ -79,6 +82,7 @@ class ControllerMakeCommand extends GeneratorCommand
         return [
             ['controller', InputArgument::REQUIRED, 'The name of the controller class.'],
             ['module', InputArgument::OPTIONAL, 'The name of module will be used.'],
+            ['sub-module', InputArgument::OPTIONAL, 'The name of sub module will be used.'],
         ];
     }
 

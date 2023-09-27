@@ -445,17 +445,20 @@ class ModuleGenerator extends Generator
                 'module' => $this->getName(),
                 '--master' => true,
             ]);
-            $this->console->call('module:route-provider', [
-                'module' => $this->getName(),
-            ]);
-        }
-
-        if (GenerateConfigReader::read('controller')->generate() === true) {
-            $options = $this->type == 'api' ? ['--api' => true] : [];
-            $this->console->call('module:make-controller', [
-                'controller' => $this->getName() . 'Controller',
-                'module' => $this->getName(),
-            ] + $options);
+            foreach (['Api/V1', 'Admin', 'Front'] as  $subModule) {
+                $this->console->call('module:route-provider', [
+                    'module' => $this->getName(),
+                    'sub-module' => $subModule,
+                ]);
+                if (GenerateConfigReader::read('controller')->generate() === true) {
+                    $options = $this->type == 'api' ? ['--api' => true] : [];
+                    $this->console->call('module:make-controller', [
+                        'controller' => $this->getName() . 'Controller',
+                        'module' => $this->getName(),
+                        'sub-module' => $subModule,
+                    ] + $options);
+                }
+            }
         }
     }
 

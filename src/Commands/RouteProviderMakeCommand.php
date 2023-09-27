@@ -37,7 +37,7 @@ class RouteProviderMakeCommand extends GeneratorCommand
     {
         return [
             ['module', InputArgument::OPTIONAL, 'The name of module will be used.'],
-            ['sub-module', InputArgument::OPTIONAL, 'The name of module will be used.'],
+            ['sub-module', InputArgument::OPTIONAL, 'The name of sub module will be used.'],
         ];
     }
 
@@ -59,7 +59,9 @@ class RouteProviderMakeCommand extends GeneratorCommand
         $submodule = $this->argument('sub-module');
         $subModuleNameSpace = $submodule ?  str_replace('/', '\\', $submodule) : '';
         return (new Stub('/route-provider.stub', [
-            'NAMESPACE'            => $this->getClassNamespace($module) . ($submodule ? '\\' . $subModuleNameSpace : ''),
+
+            'NAMESPACE'            =>
+            \str_replace('Providers', $subModuleNameSpace . '\\Providers', $this->getClassNamespace($module)),
             'CLASS'                => $this->getFileName(),
             'MODULE_NAMESPACE'     => $this->laravel['modules']->config('namespace'),
             'MODULE'               => $this->getModuleName(),
@@ -88,8 +90,8 @@ class RouteProviderMakeCommand extends GeneratorCommand
         $path = $this->laravel['modules']->getModulePath($this->getModuleName());
 
         $generatorPath = GenerateConfigReader::read('provider');
-
-        return $path . $generatorPath->getPath() . '/' . $this->getFileName() . '.php';
+        $submodule = $this->argument('sub-module');
+        return $path . $submodule . '/' . $generatorPath->getPath() . '/' . $this->getFileName() . '.php';
     }
 
     /**
