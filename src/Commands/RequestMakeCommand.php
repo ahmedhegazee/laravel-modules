@@ -50,6 +50,7 @@ class RequestMakeCommand extends GeneratorCommand
         return [
             ['name', InputArgument::REQUIRED, 'The name of the form request class.'],
             ['module', InputArgument::OPTIONAL, 'The name of module will be used.'],
+            ['sub-module', InputArgument::OPTIONAL, 'The name of sub module will be used.'],
         ];
     }
 
@@ -59,9 +60,11 @@ class RequestMakeCommand extends GeneratorCommand
     protected function getTemplateContents()
     {
         $module = $this->laravel['modules']->findOrFail($this->getModuleName());
+        $submodule = $this->argument('sub-module');
+        $subModuleNameSpace = $submodule ?  str_replace('/', '\\', $submodule) : '';
 
         return (new Stub('/request.stub', [
-            'NAMESPACE' => $this->getClassNamespace($module),
+            'NAMESPACE' => \str_replace('Http\Requests', $subModuleNameSpace . '\\Http\Requests', $this->getClassNamespace($module)),
             'CLASS'     => $this->getClass(),
         ]))->render();
     }
@@ -75,7 +78,9 @@ class RequestMakeCommand extends GeneratorCommand
 
         $requestPath = GenerateConfigReader::read('request');
 
-        return $path . $requestPath->getPath() . '/' . $this->getFileName() . '.php';
+        $submodule = $this->argument('sub-module');
+
+        return $path . $submodule . '/' . $requestPath->getPath() . '/' . $this->getFileName() . '.php';
     }
 
     /**
