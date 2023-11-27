@@ -41,7 +41,7 @@ class $CLASS$ extends ServiceProvider
     {
         $this->app->register(FrontRouteServiceProvider::class);
         $this->app->register(AdminRouteServiceProvider::class);
-        $this->app->register(ApiRouteServiceProvider::class);
+
     }
 
     /**
